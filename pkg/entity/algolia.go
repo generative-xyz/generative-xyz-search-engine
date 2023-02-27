@@ -21,12 +21,9 @@ type TokenUriAlgolia struct {
 	Name             string `json:"name"`
 	Description      string `json:"description"`
 	Image            string `json:"image"`
-	AnimationURL     string `json:"animationUrl"`
 	InscriptionIndex string `json:"inscriptionIndex"`
-	PriceBTC         string `json:"priceBTC"`
-	OrderID          string `json:"orderID"`
-	ProjectName      string `json:"projectName"`
-	ProjectID        string `json:"projectID"`
-	Thumbnail        string `json:"thumbnail"`
-	Priority         int    `json:"priority"`
+
+	ProjectName string `json:"projectName"`
+	ProjectID   string `json:"projectID"`
+	Thumbnail   string `json:"thumbnail"`
 }

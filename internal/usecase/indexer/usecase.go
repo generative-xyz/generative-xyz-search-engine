@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
@@ -73,6 +75,7 @@ func (uc *indexerUsecase) ProcessIndexDataAlgolia(rootCtx context.Context) error
 func (uc *indexerUsecase) indexingProjectData(ctx context.Context, mainW *sync.WaitGroup) error {
 	limit := int64(500)
 	page := int64(1)
+	logger.AtLog.Infof("START indexingProjectData algolia data %v", time.Now())
 	for {
 		var projects []*model.Project
 		filters := make(map[string]interface{})
@@ -99,7 +102,7 @@ func (uc *indexerUsecase) indexingProjectData(ctx context.Context, mainW *sync.W
 				return err
 			}
 
-			d.ObjectID = p.TokenID
+			d.ObjectID = p.Id.Hex()
 			d.DeletedAt = p.DeletedAt
 			d.Image = p.Thumbnail
 			data = append(data, d)
@@ -110,50 +113,73 @@ func (uc *indexerUsecase) indexingProjectData(ctx context.Context, mainW *sync.W
 		go uc.algoliaClient.BulkIndexer("projects", data, mainW)
 		page += 1
 	}
+
+	logger.AtLog.Infof("DONE indexingProjectData algolia data %v", time.Now())
 	return nil
 }
 
 func (uc *indexerUsecase) indexingTokenUriData(ctx context.Context, mainW *sync.WaitGroup) error {
 	limit := int64(500)
-	page := int64(1)
+	logger.AtLog.Infof("START indexingTokenUriData algolia data %v", time.Now())
+	lastId := ""
+	count := 0
 	for {
-		var projects []*model.TokenUri
+
+		var tokens []*model.TokenUri
 		filters := make(map[string]interface{})
 
-		_, err := uc.tokenUriRepo.Filter(ctx, filters, []string{}, []int{}, page, limit, &projects)
+		if lastId != "" {
+			if id, err := primitive.ObjectIDFromHex(lastId); err == nil {
+				filters["_id"] = bson.M{"$lt": id}
+			}
+		}
+
+		_, err := uc.tokenUriRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, &tokens)
 		if err != nil {
 			logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 			return err
 		}
 
-		if len(projects) == 0 {
+		if len(tokens) == 0 {
 			break
 		}
 
 		data := make([]*entity.TokenUriAlgolia, 0)
-		for _, p := range projects {
+		for _, p := range tokens {
 			d := &entity.TokenUriAlgolia{}
 			if p.TokenID == "" {
 				continue
 			}
 
-			if err := utils.Copy(d, p); err != nil {
-				logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
-				return err
-			}
+			// if err := utils.Copy(d, p); err != nil {
+			// 	logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
+			// 	continue
+			// }
 
-			d.ObjectID = p.TokenID
+			d.ObjectID = p.Id.Hex()
+			d.TokenID = p.TokenID
+			d.Name = p.Name
+			d.Description = p.Description
 			d.Image = p.Thumbnail
+			d.InscriptionIndex = p.InscriptionIndex
+			if p.Project != nil {
+				d.ProjectName = p.Project.Name
+				d.ProjectID = p.Project.TokenID
+			}
+			d.Thumbnail = p.Thumbnail
 			data = append(data, d)
-
 		}
 
 		mainW.Add(1)
 		go uc.algoliaClient.BulkIndexer("token-uris", data, mainW)
-		page += 1
-	}
-	return nil
+		lastId = tokens[len(tokens)-1].Id.Hex()
 
+		count += len(tokens)
+		logger.AtLog.Infof("Count: %d", count)
+	}
+
+	logger.AtLog.Infof("DONE indexingTokenUriData algolia data %v", time.Now())
+	return nil
 }
 
 func NewProjectIndexerUsecase(client *algolia.GenerativeAlgolia, repo port.IProjectRepository, tokenUriRepo port.ITokenUriRepository, ch chan struct{}) port.IIndexerUsecase {

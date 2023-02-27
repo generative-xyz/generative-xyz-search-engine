@@ -25,9 +25,10 @@ type TokenUri struct {
 	Priority      *int    `bson:"priority"`
 	MinterAddress *string `bson:"minter_address"`
 
-	IsOnchain                      bool   `bson:"isOnchain"`
-	InscriptionIndex               string `bson:"inscription_index"`
-	SyncedInscriptionInfo          bool   `bson:"synced_inscription_info"`
-	CreatedByCollectionInscription bool   `bson:"created_by_collection_inscription"`
-	Source                         string `bson:"source" json:"source"`
+	IsOnchain                      bool     `bson:"isOnchain"`
+	InscriptionIndex               string   `bson:"inscription_index"`
+	SyncedInscriptionInfo          bool     `bson:"synced_inscription_info"`
+	CreatedByCollectionInscription bool     `bson:"created_by_collection_inscription"`
+	Source                         string   `bson:"source" json:"source"`
+	Project                        *Project `bson:"project"`
 }
