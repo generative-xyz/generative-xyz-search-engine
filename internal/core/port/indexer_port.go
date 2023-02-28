@@ -7,7 +7,7 @@ import (
 
 type IIndexerUsecase interface {
 	Schedule()
-	ProcessIndexDataAlgolia(context.Context) error
+	ProcessIndexDataAlgolia(context.Context, bool) error
 }
 
 type IProjectRepository interface {
@@ -15,5 +15,9 @@ type IProjectRepository interface {
 }
 
 type ITokenUriRepository interface {
+	mongodb.Repository
+}
+
+type IUserRepository interface {
 	mongodb.Repository
 }
