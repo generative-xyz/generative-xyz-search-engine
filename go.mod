@@ -6,6 +6,7 @@ require (
 	github.com/algolia/algoliasearch-client-go/v3 v3.26.4
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-co-op/gocron v1.18.0
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/pkg/errors v0.9.1

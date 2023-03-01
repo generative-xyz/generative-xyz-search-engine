@@ -43,7 +43,7 @@ func (uc *indexerUsecase) Schedule() {
 	}
 
 	s = s.Cron(viper.GetString("ALGOLIA_INDEX_SCAN_CRON"))
-	s.StartImmediately()
+	// s.StartImmediately()
 	_, err = s.Do(func() {
 		uc.ProcessIndexDataAlgolia(context.Background(), true)
 	})
@@ -83,6 +83,10 @@ func (uc *indexerUsecase) ProcessIndexDataAlgolia(rootCtx context.Context, isDel
 	}
 
 	if err = uc.indexingTokenUriData(ctx, isDelta); err != nil {
+		return err
+	}
+
+	if err = uc.inscriptionIndexingData(ctx, isDelta); err != nil {
 		return err
 	}
 
