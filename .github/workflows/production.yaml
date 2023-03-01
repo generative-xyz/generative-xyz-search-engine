@@ -12,8 +12,7 @@ jobs:
       group: build_production
       cancel-in-progress: false
     steps:
-      - uses: rtCamp/action-cleanup@master
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get the tag name
         id: get_tag_name
         run: |
