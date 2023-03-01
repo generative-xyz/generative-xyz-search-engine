@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	projectMongoDb "generative-xyz-search-engine/internal/repository/mongo"
+	repoMongoDb "generative-xyz-search-engine/internal/repository/mongo"
 	usecase "generative-xyz-search-engine/internal/usecase/indexer"
 	"generative-xyz-search-engine/pkg/core"
 	"generative-xyz-search-engine/pkg/driver/algolia"
@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -50,14 +51,22 @@ func onInit(app *core.App) {
 		logger.AtLog.Fatalf("connect mongodb failed: %v", err)
 	}
 
-	projectRepo := projectMongoDb.NewProjectRepository(mongoDb)
-	tokenUriRepo := projectMongoDb.NewTokenRepository(mongoDb)
+	projectRepo := repoMongoDb.NewProjectRepository(mongoDb)
+	tokenUriRepo := repoMongoDb.NewTokenRepository(mongoDb)
+	userRepo := repoMongoDb.NewUserRepository(mongoDb)
 
 	ch := make(chan struct{}, 1)
-	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, projectRepo, tokenUriRepo, ch)
+	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, projectRepo, tokenUriRepo, userRepo, ch)
 
 	go func() {
 		projectUc.Schedule()
+	}()
+
+	go func() {
+		<-ch
+		logger.AtLog.Error("Dead goroutine detected. Graceful termination in 30 sec.")
+		time.Sleep(30 * time.Second)
+		panic("Panic worker because dead goroutine detected.")
 	}()
 }
 

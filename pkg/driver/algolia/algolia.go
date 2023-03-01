@@ -2,7 +2,6 @@ package algolia
 
 import (
 	"generative-xyz-search-engine/pkg/logger"
-	"sync"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/spf13/viper"
@@ -20,8 +19,7 @@ func NewAlgoliaClient() *GenerativeAlgolia {
 	return &GenerativeAlgolia{Client: client}
 }
 
-func (al *GenerativeAlgolia) BulkIndexer(indexName string, objects interface{}, w *sync.WaitGroup) {
-	defer w.Done()
+func (al *GenerativeAlgolia) BulkIndexer(indexName string, objects interface{}) {
 	index := al.Client.InitIndex(indexName)
 	// Add objects to the index
 	_, err := index.SaveObjects(objects)

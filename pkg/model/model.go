@@ -7,8 +7,8 @@ import (
 )
 
 type Model struct {
-	Id  primitive.ObjectID `json:"_id" bson:"_id" gorm:"-"`
-	Id_ uint               `json:"-" bson:"id" gorm:"column:id;primaryKey"`
+	Id primitive.ObjectID `json:"_id" bson:"_id" gorm:"-"`
+	// Id_ uint               `json:"-" bson:"id" gorm:"column:id;primaryKey"`
 
 	DateCreated    time.Time  `json:"date_created,omitempty" bson:"date_created" gorm:"date_created;autoCreateTime"`
 	DateModified   time.Time  `json:"date_modified,omitempty" bson:"date_modified" gorm:"date_modified;autoCreateTime"`
