@@ -39,12 +39,12 @@ type Project struct {
 	MintingInfo            ProjectMintingInfo `bson:"inline" json:"mintingInfo"`
 	CompleteTime           int64              `bson:"completeTime" json:"completeTime"`
 	// CreatorProfile          User               `bson:"creatorProfile" json:"creatorProfile"`
-	BlockNumberMinted *string     `bson:"block_number_minted" json:"block_number_minted"`
-	MintedTime        *time.Time  `bson:"minted_time" json:"minted_time"`
-	Stats             ProjectStat `bson:"stats" json:"stats"`
-	TraitsStat        []TraitStat `bson:"traitsStat" json:"traitsStat"`
-	Priority          *int        `bson:"priority" json:"priority"`
-	IsHidden          bool        `bson:"isHidden" json:"isHidden"`
+	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
+	// MintedTime        *time.Time  `bson:"minted_time" json:"minted_time"`
+	Stats      ProjectStat `bson:"stats" json:"stats"`
+	TraitsStat []TraitStat `bson:"traitsStat" json:"traitsStat"`
+	Priority   *int        `bson:"priority" json:"priority"`
+	IsHidden   bool        `bson:"isHidden" json:"isHidden"`
 	//if user uses links instead of animation URL
 	WhiteListEthContracts []string         `bson:"whiteListEthContracts" json:"whiteListEthContracts"` //if user uses links instead of animation URL
 	IsFullChain           bool             `bson:"isFullChain" json:"isFullChain"`
