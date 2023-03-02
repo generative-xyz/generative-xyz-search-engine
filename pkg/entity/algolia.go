@@ -44,6 +44,9 @@ type ProjectAlgolia struct {
 	Image           string     `json:"image"`
 	ContractAddress string     `json:"contractAddress"`
 	ItemDesc        string     `json:"itemDesc"`
+	Index           int64      `json:"index"`
+	MintPrice       string     `json:"mintPrice"`
+	MaxSupply       int64      `json:"maxSupply"`
 }
 
 type TokenUriAlgolia struct {
