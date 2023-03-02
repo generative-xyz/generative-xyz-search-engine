@@ -8,6 +8,7 @@ import (
 	"generative-xyz-search-engine/pkg/driver/algolia"
 	"generative-xyz-search-engine/pkg/driver/mongodb"
 	"generative-xyz-search-engine/pkg/logger"
+	"generative-xyz-search-engine/pkg/redis"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +20,7 @@ import (
 )
 
 var (
+	redisDb redis.Client
 	mongoDb *mongo.Database
 	err     error
 )
@@ -51,12 +53,15 @@ func onInit(app *core.App) {
 		logger.AtLog.Fatalf("connect mongodb failed: %v", err)
 	}
 
+	// inti redis
+	redisDb = redis.NewClient()
+
 	projectRepo := repoMongoDb.NewProjectRepository(mongoDb)
 	tokenUriRepo := repoMongoDb.NewTokenRepository(mongoDb)
 	userRepo := repoMongoDb.NewUserRepository(mongoDb)
 
 	ch := make(chan struct{}, 1)
-	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, projectRepo, tokenUriRepo, userRepo, ch)
+	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, redisDb, projectRepo, tokenUriRepo, userRepo, ch)
 
 	go func() {
 		projectUc.Schedule()
