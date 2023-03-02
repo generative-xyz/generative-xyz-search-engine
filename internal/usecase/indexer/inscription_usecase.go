@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"generative-xyz-search-engine/pkg/logger"
 	"sync"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
@@ -34,11 +35,18 @@ type InscriptionDetail struct {
 }
 
 func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta bool) error {
+	logger.AtLog.Infof("START inscriptionIndexingData algolia data %v", time.Now())
 	// Create a Resty Client
 	client := resty.New()
 	result := &ListInscriptionResponse{}
-	index := 0
+	index := int(0)
+	// uc.redis.Set(ctx, "Inscription_Index_Count", 100_000, time.Duration(time.Hour*1))
+	if err := uc.redis.Get(ctx, "Inscription_Index_Count", &index); err != nil {
+		index = 0
+	}
+
 	for {
+		logger.AtLog.Infof("Index: %d", index)
 		_, err := client.R().
 			EnableTrace().
 			SetResult(result).
@@ -49,7 +57,7 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 			return err
 		}
 
-		if result.Next == 0 || index > 10_000 {
+		if result.Next == 0 {
 			break
 		}
 
@@ -74,11 +82,17 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 				}(r)
 			}
 			wg.Wait()
+
 			uc.algoliaClient.BulkIndexer("inscriptions", data)
 			logger.AtLog.Infof("INDEXING %d", index)
 		}(result)
-
+		uc.redis.Set(ctx, "Inscription_Index_Count", index, time.Duration(time.Hour*24*30))
 		index += 100
 	}
+
+	// if err := uc.redis.Set(ctx, "Inscription_Index_Count", index, time.Duration(time.Hour*24*30)); err != nil {
+	// 	return err
+	// }
+	logger.AtLog.Infof("DONE inscriptionIndexingData algolia data %v", time.Now())
 	return nil
 }

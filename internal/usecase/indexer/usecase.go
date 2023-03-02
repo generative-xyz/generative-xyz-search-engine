@@ -7,6 +7,7 @@ import (
 	"generative-xyz-search-engine/pkg/entity"
 	"generative-xyz-search-engine/pkg/logger"
 	"generative-xyz-search-engine/pkg/model"
+	"generative-xyz-search-engine/pkg/redis"
 	"generative-xyz-search-engine/utils"
 	"generative-xyz-search-engine/utils/constants"
 	"time"
@@ -22,6 +23,7 @@ import (
 
 type indexerUsecase struct {
 	algoliaClient *algolia.GenerativeAlgolia
+	redis         redis.Client
 	projectRepo   port.IProjectRepository
 	tokenUriRepo  port.ITokenUriRepository
 	userRepo      port.IUserRepository
@@ -260,6 +262,7 @@ func (uc *indexerUsecase) indexingTokenUriData(ctx context.Context, isDelta bool
 
 func NewProjectIndexerUsecase(
 	client *algolia.GenerativeAlgolia,
+	redis redis.Client,
 	repo port.IProjectRepository,
 	tokenUriRepo port.ITokenUriRepository,
 	userRepo port.IUserRepository,
@@ -267,6 +270,7 @@ func NewProjectIndexerUsecase(
 ) port.IIndexerUsecase {
 	return &indexerUsecase{
 		algoliaClient: client,
+		redis:         redis,
 		projectRepo:   repo,
 		tokenUriRepo:  tokenUriRepo,
 		userRepo:      userRepo,
