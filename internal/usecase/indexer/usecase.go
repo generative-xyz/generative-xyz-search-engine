@@ -88,9 +88,9 @@ func (uc *indexerUsecase) ProcessIndexDataAlgolia(rootCtx context.Context, isDel
 		return err
 	}
 
-	if err = uc.inscriptionIndexingData(ctx, isDelta); err != nil {
-		return err
-	}
+	// if err = uc.inscriptionIndexingData(ctx, isDelta); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

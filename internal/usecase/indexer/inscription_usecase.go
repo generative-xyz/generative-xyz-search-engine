@@ -40,13 +40,12 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 	client := resty.New()
 	result := &ListInscriptionResponse{}
 	index := int(0)
-	// uc.redis.Set(ctx, "Inscription_Index_Count", 100_000, time.Duration(time.Hour*1))
+	// uc.redis.Set(ctx, "Inscription_Index_Count", 0, time.Duration(time.Hour*1))
 	if err := uc.redis.Get(ctx, "Inscription_Index_Count", &index); err != nil {
 		index = 0
 	}
 
 	for {
-		logger.AtLog.Infof("Index: %d", index)
 		_, err := client.R().
 			EnableTrace().
 			SetResult(result).
@@ -84,9 +83,9 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 			wg.Wait()
 
 			uc.algoliaClient.BulkIndexer("inscriptions", data)
+			uc.redis.Set(ctx, "Inscription_Index_Count", index-100, time.Duration(time.Hour*24*30))
 			logger.AtLog.Infof("INDEXING %d", index)
 		}(result)
-		uc.redis.Set(ctx, "Inscription_Index_Count", index, time.Duration(time.Hour*24*30))
 		index += 100
 	}
 
