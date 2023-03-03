@@ -41,8 +41,8 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 	index := int(0)
 
 	if err := uc.redis.Get(ctx, "Inscription_Index_Count", &index); err != nil {
-		uc.redis.Set(ctx, "Inscription_Index_Count", 250000, time.Duration(time.Hour*1))
-		index = 250000
+		uc.redis.Set(ctx, "Inscription_Index_Count", 260000, time.Duration(time.Hour*1))
+		index = 260000
 	}
 
 	for {
