@@ -76,7 +76,7 @@ func (uc *indexerUsecase) ProcessIndexDataAlgolia(rootCtx context.Context, isDel
 		span.Finish(spanOpts...)
 	}()
 
-	if err = uc.indexingUserData(ctx, false); err != nil {
+	if err = uc.indexingUserData(ctx, isDelta); err != nil {
 		return err
 	}
 
@@ -88,9 +88,9 @@ func (uc *indexerUsecase) ProcessIndexDataAlgolia(rootCtx context.Context, isDel
 		return err
 	}
 
-	// if err = uc.inscriptionIndexingData(ctx, isDelta); err != nil {
-	// 	return err
-	// }
+	if err = uc.inscriptionIndexingData(ctx, isDelta); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -157,6 +157,7 @@ func (uc *indexerUsecase) indexingProjectData(ctx context.Context, isDelta bool)
 		if isDelta {
 			filters["updated_at"] = bson.M{"$gte": now.Add(constants.DeltaIndexingDataHours)}
 		}
+
 		if lastId != "" {
 			if id, err := primitive.ObjectIDFromHex(lastId); err == nil {
 				filters["_id"] = bson.M{"$lt": id}

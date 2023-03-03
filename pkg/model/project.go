@@ -3,14 +3,14 @@ package model
 import "time"
 
 type Project struct {
-	Model                  `bson:"inline"`
-	ContractAddress        string `bson:"contractAddress" json:"contractAddress"`
-	TokenID                string `bson:"tokenid" json:"tokenID"`
-	MaxSupply              int64  `bson:"maxSupply" json:"maxSupply"`
-	MintPrice              string `bson:"mintPrice" json:"mintPrice"`
-	MintPriceEth           string
-	NetworkFeeEth          string
-	NetworkFee             string             `bson:"networkFee" json:"networkFee"`
+	Model           `bson:"inline"`
+	ContractAddress string `bson:"contractAddress" json:"contractAddress"`
+	TokenID         string `bson:"tokenid" json:"tokenID"`
+	MaxSupply       int64  `bson:"maxSupply" json:"maxSupply"`
+	MintPrice       string `bson:"mintPrice" json:"mintPrice"`
+	MintPriceEth    string
+	// NetworkFeeEth          string
+	// NetworkFee             string             `bson:"networkFee" json:"networkFee"`
 	Name                   string             `bson:"name" json:"name"`
 	CreatorName            string             `bson:"creatorName" json:"creatorName"`
 	CreatorAddrr           string             `bson:"creatorAddress" json:"creatorAddrr"`

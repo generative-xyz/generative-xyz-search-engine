@@ -38,14 +38,15 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 	logger.AtLog.Infof("START inscriptionIndexingData algolia data %v", time.Now())
 	// Create a Resty Client
 	client := resty.New()
-	result := &ListInscriptionResponse{}
 	index := int(0)
-	// uc.redis.Set(ctx, "Inscription_Index_Count", 0, time.Duration(time.Hour*1))
+
 	if err := uc.redis.Get(ctx, "Inscription_Index_Count", &index); err != nil {
-		index = 0
+		uc.redis.Set(ctx, "Inscription_Index_Count", 250000, time.Duration(time.Hour*1))
+		index = 250000
 	}
 
 	for {
+		result := &ListInscriptionResponse{}
 		_, err := client.R().
 			EnableTrace().
 			SetResult(result).
