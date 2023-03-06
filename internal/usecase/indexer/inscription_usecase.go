@@ -23,6 +23,7 @@ type InscriptionDetail struct {
 	Chain         string                 `json:"chain"`
 	GenesisFee    int64                  `json:"genesis_fee"`
 	GenesisHeight int64                  `json:"genesis_height"`
+	Address       string                 `json:"address"`
 	ContentType   string                 `json:"content_type"`
 	InscriptionId string                 `json:"inscription_id"`
 	Next          string                 `json:"next"`
