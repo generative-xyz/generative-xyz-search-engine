@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"generative-xyz-search-engine/internal/core/port"
 	"generative-xyz-search-engine/pkg/driver/algolia"
 	"generative-xyz-search-engine/pkg/entity"
