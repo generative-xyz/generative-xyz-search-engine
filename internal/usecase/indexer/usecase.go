@@ -243,10 +243,21 @@ func (uc *indexerUsecase) indexingTokenUriData(ctx context.Context, isDelta bool
 			d.Description = p.Description
 			d.Image = p.Thumbnail
 			d.InscriptionIndex = p.InscriptionIndex
-			if p.Project != nil {
-				d.ProjectName = p.Project.Name
-				d.ProjectID = p.Project.TokenID
+
+			filters := make(map[string]interface{})
+			filters["tokenid"] = p.ProjectID
+
+			project := &model.Project{}
+			err := uc.projectRepo.FindOne(ctx, filters, &project)
+			if err != nil {
+				logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 			}
+
+			if project != nil {
+				d.ProjectName = fmt.Sprintf("%s #%d", project.Name, p.OrderInscriptionIndex)
+				d.ProjectID = p.ProjectID
+			}
+
 			d.Thumbnail = p.Thumbnail
 			data = append(data, d)
 		}

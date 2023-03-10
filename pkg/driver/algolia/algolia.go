@@ -27,3 +27,12 @@ func (al *GenerativeAlgolia) BulkIndexer(indexName string, objects interface{}) 
 		logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 	}
 }
+
+func (al *GenerativeAlgolia) DeleteObject(indexName string, id string) {
+	index := al.Client.InitIndex(indexName)
+	// Add objects to the index
+	_, err := index.DeleteObject(id)
+	if err != nil {
+		logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
+	}
+}

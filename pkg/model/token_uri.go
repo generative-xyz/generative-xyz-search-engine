@@ -25,4 +25,5 @@ type TokenUri struct {
 	CreatedByCollectionInscription bool     `bson:"created_by_collection_inscription"`
 	Source                         string   `bson:"source" json:"source"`
 	Project                        *Project `bson:"project"`
+	OrderInscriptionIndex          int64    `bson:"order_inscription_index" json:"orderInscriptionIndex"`
 }
