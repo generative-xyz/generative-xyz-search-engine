@@ -3,7 +3,7 @@ package model
 import "time"
 
 type User struct {
-	Model                   `bson:"inline" `
+	Model                   `bson:"inline"`
 	WalletAddress           string        `bson:"wallet_address" json:"walletAddress,omitempty"`                       // eth wallet define user in platform by connect wallet and sign
 	WalletAddressPayment    string        `bson:"wallet_address_payment" json:"walletAddressPayment,omitempty"`        // eth wallet artist receive royalty
 	WalletAddressBTC        string        `bson:"wallet_address_btc" json:"walletAddressBtc,omitempty"`                // btc wallet artist receive royalty

@@ -18,7 +18,7 @@ const MongoIdGenCollectionName = "id-gen"
 type Repository interface {
 	Database() *mongo.Database
 	Collection() *mongo.Collection
-	Filter(ctx context.Context, filters map[string]interface{}, sortFields []string, sortValues []int, page int64, limit int64, result interface{}) (int64, error)
+	Filter(ctx context.Context, filters map[string]interface{}, sortFields []string, sortValues []int, page int64, limit int64, selectFields interface{}, result interface{}) (int64, error)
 	Find(ctx context.Context, filters map[string]interface{}, result interface{}, opts ...*options.FindOptions) error
 	FindById(ctx context.Context, id primitive.ObjectID, value interface{}) error
 	FindOne(ctx context.Context, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error
@@ -71,7 +71,7 @@ func (b *BaseRepository) Find(ctx context.Context, filters map[string]interface{
 	}
 	return nil
 }
-func (b *BaseRepository) Filter(ctx context.Context, filters map[string]interface{}, sortFields []string, sortValue []int, page int64, limit int64, result interface{}) (int64, error) {
+func (b *BaseRepository) Filter(ctx context.Context, filters map[string]interface{}, sortFields []string, sortValue []int, page int64, limit int64, selectFields interface{}, result interface{}) (int64, error) {
 	query := pg.New(b.DB.Collection(b.CollectionName)).Decode(result).Context(ctx).Page(page).Limit(limit)
 	if len(sortFields) < 1 {
 		query = query.Sort("date_modified", -1)
@@ -82,7 +82,7 @@ func (b *BaseRepository) Filter(ctx context.Context, filters map[string]interfac
 			}
 		}
 	}
-	aggPaginatedData, err := query.Filter(filters).Find()
+	aggPaginatedData, err := query.Filter(filters).Select(selectFields).Find()
 	if err != nil {
 		return 0, err
 	}

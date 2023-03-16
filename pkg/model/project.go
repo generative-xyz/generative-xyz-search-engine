@@ -3,12 +3,13 @@ package model
 import "time"
 
 type Project struct {
-	Model           `bson:"inline"`
+	Model           `bson:"inline" json:"-"`
 	ContractAddress string `bson:"contractAddress" json:"contractAddress"`
 	TokenID         string `bson:"tokenid" json:"tokenID"`
+	TokenIDInt      int64  `bson:"tokenIDInt"`
 	MaxSupply       int64  `bson:"maxSupply" json:"maxSupply"`
 	MintPrice       string `bson:"mintPrice" json:"mintPrice"`
-	MintPriceEth    string
+	MintPriceEth    string `bson:"mintpriceeth"json:"mintPriceEth"`
 	// NetworkFeeEth          string
 	// NetworkFee             string             `bson:"networkFee" json:"networkFee"`
 	Name                   string             `bson:"name" json:"name"`
@@ -19,11 +20,8 @@ type Project struct {
 	OpenMintUnixTimestamp  int                `bson:"openMintUnixTimestamp" json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int                `bson:"closeMintUnixTimestamp" json:"closeMintUnixTimestamp"`
 	Thumbnail              string             `bson:"thumbnail" json:"thumbnail"`
-	ReservationList        []string           `bson:"reservationList" json:"reservationList"`
 	MintFee                int                `bson:"mintFee" json:"mintFee"`
 	TokenDescription       string             `bson:"tokenDescription" json:"tokenDescription"`
-	Styles                 string             `bson:"styles" json:"styles"`
-	Royalty                int                `bson:"royalty" json:"royalty"`
 	SocialWeb              string             `bson:"socialWeb" json:"socialWeb"`
 	SocialTwitter          string             `bson:"socialTwitter" json:"socialTwitter"`
 	SocialDiscord          string             `bson:"socialDiscord" json:"socialDiscord"`
@@ -32,7 +30,6 @@ type Project struct {
 	License                string             `bson:"license" json:"license"`
 	GenNFTAddr             string             `bson:"genNFTAddr" json:"genNFTAddr"`
 	MintTokenAddress       string             `bson:"mintTokenAddress" json:"mintTokenAddress"`
-	Tags                   []string           `bson:"tags" json:"tags"`
 	Categories             []string           `bson:"categories" json:"categories"`
 	Status                 bool               `bson:"status" json:"status"`
 	IsSynced               bool               `bson:"isSynced" json:"isSynced"`

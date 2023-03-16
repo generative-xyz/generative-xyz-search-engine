@@ -108,13 +108,14 @@ func (uc *indexerUsecase) indexingUserData(ctx context.Context, isDelta bool) er
 		if isDelta {
 			filters["updated_at"] = bson.M{"$gte": now.Add(constants.DeltaIndexingDataHours)}
 		}
+
 		if lastId != "" {
 			if id, err := primitive.ObjectIDFromHex(lastId); err == nil {
 				filters["_id"] = bson.M{"$lt": id}
 			}
 		}
 
-		_, err := uc.userRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, &users)
+		_, err := uc.userRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, nil, &users)
 		if err != nil {
 			logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 			return err
@@ -165,7 +166,9 @@ func (uc *indexerUsecase) indexingProjectData(ctx context.Context, isDelta bool)
 			}
 		}
 
-		_, err := uc.projectRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, &projects)
+		_, err := uc.projectRepo.Filter(
+			ctx, filters, []string{"_id"}, []int{-1}, 0, limit, uc.projectRepo.SelectedProjectFields(), &projects,
+		)
 		if err != nil {
 			logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 			return err
@@ -221,7 +224,7 @@ func (uc *indexerUsecase) indexingTokenUriData(ctx context.Context, isDelta bool
 			}
 		}
 
-		_, err := uc.tokenUriRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, &tokens)
+		_, err := uc.tokenUriRepo.Filter(ctx, filters, []string{"_id"}, []int{-1}, 0, limit, nil, &tokens)
 		if err != nil {
 			logger.AtLog.Logger.Error(err.Error(), zap.Error(err))
 			return err
