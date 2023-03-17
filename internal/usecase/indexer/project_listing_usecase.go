@@ -126,7 +126,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		floorPrice, _ := uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection(projectID)
 		project := projectMapData[projectID]
 		hidden := false
-		if project != nil && (project.IsHidden || !project.Status) {
+		if project != nil && project.IsHidden {
 			hidden = true
 		}
 
