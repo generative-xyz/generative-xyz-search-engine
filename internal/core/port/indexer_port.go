@@ -19,8 +19,17 @@ type IProjectRepository interface {
 
 type ITokenUriRepository interface {
 	mongodb.Repository
+	ProjectGetCurrentListingNumber(projectID string) (uint64, error)
+	ProjectGetMintVolume(projectID string) (uint64, error)
 }
 
 type IUserRepository interface {
 	mongodb.Repository
+}
+
+type IDexBtcListingRepository interface {
+	mongodb.Repository
+	ProjectGetListingVolume(projectID string) (uint64, error)
+	ProjectGetCEXVolume(projectID string) (uint64, error)
+	RetrieveFloorPriceOfCollection(collectionID string) (uint64, error)
 }

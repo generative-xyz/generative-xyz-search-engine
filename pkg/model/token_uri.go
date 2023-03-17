@@ -1,5 +1,11 @@
 package model
 
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
 type TokenUri struct {
 	Model       `bson:"inline"`
 	TokenID     string `bson:"token_id" json:"token_id"`
@@ -26,4 +32,36 @@ type TokenUri struct {
 	Source                         string   `bson:"source" json:"source"`
 	Project                        *Project `bson:"project"`
 	OrderInscriptionIndex          int64    `bson:"order_inscription_index" json:"orderInscriptionIndex"`
+}
+
+type TokenUriListingPage struct {
+	TotalData  []TokenUriListingFilter `bson:"totalData" json:"totalData"`
+	TotalCount []struct {
+		Count int64 `bson:"count" json:"count"`
+	} `bson:"totalCount" json:"totalCount"`
+}
+
+type TokenUriListingFilter struct {
+	ID                    primitive.ObjectID `bson:"_id" json:"_id"`
+	TokenID               string             `bson:"token_id" json:"tokenID"`
+	Name                  string             `bson:"name" json:"name"`
+	Image                 string             `bson:"image" json:"image"`
+	ContractAddress       string             `bson:"contract_address" json:"contract_address"`
+	AnimationURL          string             `bson:"animation_url" json:"animation_url"`
+	AnimationHtml         *string            `bson:"animation_html"`
+	ProjectID             string             `bson:"project_id" json:"projectID"`
+	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
+	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"genNFTAddr"`
+	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
+	InscriptionIndex      string             `bson:"inscription_index" json:"inscriptionIndex"`
+	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
+	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
+	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
+	PriceETH              string             `bson:"priceETH" json:"priceETH"`
+	Buyable               bool               `bson:"buyable" json:"buyable"`
+	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
+	Project               struct {
+		TokenID string `bson:"tokenid" json:"tokenID"`
+		Royalty int64  `bson:"royalty" json:"royalty"`
+	} `bson:"project" json:"project"`
 }
