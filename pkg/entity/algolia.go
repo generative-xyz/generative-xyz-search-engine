@@ -104,15 +104,18 @@ type ProjectAlgolia struct {
 	Name            string     `json:"name"`
 	CreatorAddrr    string     `json:"creatorAddrr"`
 	CreatorName     string     `json:"creatorName"`
-	IsSynced        bool       `json:"isSynced"`
 	DeletedAt       *time.Time `json:"deletedAt"`
 	Image           string     `json:"image"`
 	ContractAddress string     `json:"contractAddress"`
 	ItemDesc        string     `json:"itemDesc"`
 	Index           int64      `json:"index"`
+	IndexReverse    int64      `json:"indexReverse"`
 	MintPrice       string     `json:"mintPrice"`
 	MaxSupply       int64      `json:"maxSupply"`
 	Categories      []string   `json:"categories"`
+	Status          bool       `json:"status"`
+	IsHidden        bool       `json:"isHidden"`
+	IsSynced        bool       `json:"isSynced"`
 }
 
 type TokenUriAlgolia struct {
