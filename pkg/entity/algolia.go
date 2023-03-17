@@ -1,6 +1,71 @@
 package entity
 
-import "time"
+import (
+	"generative-xyz-search-engine/pkg/model"
+	"time"
+)
+
+type ProjectListing struct {
+	ObjectID               string                  `json:"objectID"`
+	ContractAddress        string                  `json:"contractAddress"`
+	Project                *ProjectInfo            `json:"project"`
+	TotalSupply            int64                   `json:"totalSupply"`
+	NumberOwners           int64                   `json:"numberOwners"`
+	NumberOwnersPercentage float64                 `json:"numberOwnersPercentage"`
+	FloorPrice             string                  `json:"floorPrice"`
+	FloorPriceOneDay       *VolumneObject          `json:"floorPriceOneDay"`
+	FloorPriceOneWeek      *VolumneObject          `json:"floorPriceOneWeek"`
+	VolumeFifteenMinutes   *VolumneObject          `json:"volumeFifteenMinutes"`
+	VolumeOneDay           *VolumneObject          `json:"volumeOneDay"`
+	VolumeOneWeek          *VolumneObject          `json:"volumeOneWeek"`
+	ProjectMarketplaceData *ProjectMarketplaceData `json:"projectMarketplaceData"`
+	Owner                  *OwnerInfo              `json:"owner"`
+	IsHidden               bool                    `json:"isHidden"`
+	TotalVolume            uint64                  `json:"totalVolume"`
+}
+
+type ProjectMarketplaceData struct {
+	Listed      uint64 `json:"listed"`
+	FloorPrice  uint64 `json:"floor_price"`
+	TotalVolume uint64 `json:"volume"`
+	MintVolume  uint64 `json:"mint_volume"`
+	CEXVolume   uint64 `json:"cex_volume"`
+}
+
+type OwnerInfo struct {
+	WalletAddress           string `json:"walletAddress,omitempty"`
+	WalletAddressPayment    string `json:"walletAddress_payment,omitempty"`
+	WalletAddressBTC        string `json:"walletAddress_btc,omitempty"`
+	WalletAddressBTCTaproot string `json:"walletAddress_btc_taproot,omitempty"`
+	DisplayName             string `json:"displayName,omitempty"`
+	Avatar                  string `json:"avatar"`
+}
+
+type ProjectMintingInfo struct {
+	Index        int64 `json:"index"`
+	IndexReverse int64 `json:"index_reverse"`
+}
+
+type ProjectInfo struct {
+	Name            string              `json:"name"`
+	TokenId         string              `json:"tokenId"`
+	Thumbnail       string              `json:"thumbnail"`
+	ContractAddress string              `json:"contractAddress"`
+	CreatorAddress  string              `json:"creatorAddress"`
+	MaxSupply       int64               `json:"maxSupply"`
+	MintingInfo     *ProjectMintingInfo `json:"mintingInfo"`
+	IsMintedOut     bool                `json:"isMintedOut"`
+}
+
+type VolumneObject struct {
+	Amount            string  `json:"amount"`
+	PercentageChanged float64 `json:"percentageChanged"`
+}
+
+type DexBtcListingAlgolia struct {
+	ObjectID string `json:"objectID"`
+	model.DexBtcListing
+}
 
 type UserAlgolia struct {
 	ObjectID                string        `json:"objectID"`
@@ -47,6 +112,7 @@ type ProjectAlgolia struct {
 	Index           int64      `json:"index"`
 	MintPrice       string     `json:"mintPrice"`
 	MaxSupply       int64      `json:"maxSupply"`
+	Categories      []string   `json:"categories"`
 }
 
 type TokenUriAlgolia struct {

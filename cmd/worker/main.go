@@ -59,9 +59,10 @@ func onInit(app *core.App) {
 	projectRepo := repoMongoDb.NewProjectRepository(mongoDb)
 	tokenUriRepo := repoMongoDb.NewTokenRepository(mongoDb)
 	userRepo := repoMongoDb.NewUserRepository(mongoDb)
+	dexBtcListingRepo := repoMongoDb.NewDexBtcListingRepository(mongoDb)
 
 	ch := make(chan struct{}, 1)
-	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, redisDb, projectRepo, tokenUriRepo, userRepo, ch)
+	projectUc := usecase.NewProjectIndexerUsecase(algoliaClient, redisDb, projectRepo, tokenUriRepo, userRepo, dexBtcListingRepo, ch)
 
 	go func() {
 		projectUc.Schedule()

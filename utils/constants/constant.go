@@ -3,5 +3,5 @@ package constants
 import "time"
 
 const (
-	DeltaIndexingDataHours = -3 * time.Hour
+	DeltaIndexingDataHours = -1 * time.Hour
 )
