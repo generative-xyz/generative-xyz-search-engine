@@ -252,6 +252,8 @@ func (uc *indexerUsecase) indexingProjectData(ctx context.Context, isDelta bool)
 			d.ObjectID = p.Id.Hex()
 			d.DeletedAt = p.DeletedAt
 			d.Image = p.Thumbnail
+			d.Index = p.MintingInfo.Index
+			d.IndexReverse = p.MintingInfo.IndexReverse
 			data = append(data, d)
 		}
 		lastId = projects[len(projects)-1].Id.Hex()

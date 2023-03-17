@@ -64,7 +64,8 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 							CreatorAddress:  project.CreatorAddrr,
 							MaxSupply:       project.MaxSupply,
 							MintingInfo: &entity.ProjectMintingInfo{
-								Index: project.Index,
+								Index:        project.Index,
+								IndexReverse: project.IndexReverse,
 							},
 						},
 					}
