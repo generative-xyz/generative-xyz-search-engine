@@ -124,8 +124,17 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		btc.NumberOwners = int64(len(utils.RemoveDuplicateValues(addresses)))
 
 		floorPrice, _ := uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection(projectID)
+		project := projectMapData[projectID]
+		hidden := false
+		if project != nil && (project.IsHidden || !project.Status) {
+			hidden = true
+		}
 
 		if floorPrice <= 0 && btc.Project.MintingInfo.Index < btc.Project.MaxSupply {
+			hidden = true
+		}
+
+		if hidden {
 			btc.IsHidden = true
 		} else {
 			currentListing, _ := uc.tokenUriRepo.ProjectGetCurrentListingNumber(projectID)
