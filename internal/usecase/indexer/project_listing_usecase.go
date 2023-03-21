@@ -150,6 +150,9 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 				MintVolume:  mintVolume,
 			}
 			btc.TotalVolume = volume + mintVolume + volumeCEX
+			if btc.ProjectMarketplaceData.FloorPrice > 0 && btc.ProjectMarketplaceData.TotalVolume > 0 {
+				btc.IsBuyable = true
+			}
 		}
 
 		data = append(data, btc)

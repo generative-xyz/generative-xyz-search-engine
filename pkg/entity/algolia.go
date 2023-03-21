@@ -22,6 +22,7 @@ type ProjectListing struct {
 	Owner                  *OwnerInfo              `json:"owner"`
 	IsHidden               bool                    `json:"isHidden"`
 	TotalVolume            uint64                  `json:"totalVolume"`
+	IsBuyable              bool                    `json:"isBuyable"`
 }
 
 type ProjectMarketplaceData struct {
