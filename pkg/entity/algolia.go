@@ -23,14 +23,16 @@ type ProjectListing struct {
 	IsHidden               bool                    `json:"isHidden"`
 	TotalVolume            uint64                  `json:"totalVolume"`
 	IsBuyable              bool                    `json:"isBuyable"`
+	Priority               int                     `json:"priority"`
 }
 
 type ProjectMarketplaceData struct {
-	Listed      uint64 `json:"listed"`
-	FloorPrice  uint64 `json:"floor_price"`
-	TotalVolume uint64 `json:"volume"`
-	MintVolume  uint64 `json:"mint_volume"`
-	CEXVolume   uint64 `json:"cex_volume"`
+	Listed          uint64  `json:"listed"`
+	FloorPrice      uint64  `json:"floor_price"`
+	TotalVolume     uint64  `json:"volume"`
+	MintVolume      uint64  `json:"mint_volume"`
+	CEXVolume       uint64  `json:"cex_volume"`
+	FirstSaleVolume float64 `json:"first_sale_volume"`
 }
 
 type OwnerInfo struct {

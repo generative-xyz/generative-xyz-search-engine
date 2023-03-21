@@ -5,6 +5,7 @@ import (
 	"generative-xyz-search-engine/internal/core/port"
 	"generative-xyz-search-engine/pkg/driver/mongodb"
 	"generative-xyz-search-engine/pkg/model"
+	"generative-xyz-search-engine/utils"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -251,4 +252,58 @@ func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint
 	}
 
 	return 0, nil
+}
+
+func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.AggregateProjectItemResp, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []model.AggregateProjectItemResp{}
+
+	calculate := bson.M{"$sum": "$project_mint_price"}
+	// PayType *string
+	// ReferreeIDs []string
+	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
+		bson.M{"isMinted": true},
+		bson.M{"projectID": projectID},
+	}}}
+
+	pipeLine := bson.A{
+		matchStage,
+		bson.M{"$group": bson.M{"_id": bson.M{"projectID": "$projectID"},
+			"amount": calculate,
+			"minted": bson.M{"$sum": 1},
+		}},
+		bson.M{"$sort": bson.M{"_id": -1}},
+	}
+
+	cursor, err := r.DB.Collection("mint_nft_btc").Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {
+		res := &model.AggregateProjectItem{}
+		err = utils.Copy(item, res)
+		if err != nil {
+			return nil, err
+		}
+
+		tmp := model.AggregateProjectItemResp{
+			ProjectID: res.ID.ProjectID,
+			Paytype:   res.ID.Paytype,
+			BtcRate:   res.ID.BtcRate,
+			EthRate:   res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
+			Amount:    res.Amount,
+			Minted:    res.Minted,
+		}
+		confs = append(confs, tmp)
+	}
+
+	return confs, nil
 }

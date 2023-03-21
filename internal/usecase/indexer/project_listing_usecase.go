@@ -143,15 +143,27 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			volumeCEX, _ := uc.dexBtcListingRepo.ProjectGetCEXVolume(projectID)
 			mintVolume, _ := uc.tokenUriRepo.ProjectGetMintVolume(projectID)
 
-			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
-				FloorPrice:  floorPrice,
-				Listed:      currentListing,
-				TotalVolume: volume + mintVolume + volumeCEX,
-				MintVolume:  mintVolume,
+			btcVolumes, _ := uc.dexBtcListingRepo.AggregateBTCVolumn(projectID)
+			firstSaleVolume := float64(0)
+			if len(btcVolumes) > 0 {
+				firstSaleVolume = btcVolumes[0].Amount
 			}
-			btc.TotalVolume = volume + mintVolume + volumeCEX
+
+			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
+				FloorPrice:      floorPrice,
+				Listed:          currentListing,
+				TotalVolume:     volume + mintVolume + volumeCEX + uint64(firstSaleVolume),
+				MintVolume:      mintVolume,
+				FirstSaleVolume: firstSaleVolume,
+			}
+
+			btc.TotalVolume = volume + mintVolume + volumeCEX + uint64(firstSaleVolume)
+			btc.Priority = 3
 			if btc.ProjectMarketplaceData.FloorPrice > 0 && btc.ProjectMarketplaceData.TotalVolume > 0 {
 				btc.IsBuyable = true
+				btc.Priority = 1
+			} else if btc.ProjectMarketplaceData.FloorPrice > 0 {
+				btc.Priority = 2
 			}
 		}
 

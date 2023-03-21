@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"generative-xyz-search-engine/pkg/driver/mongodb"
+	"generative-xyz-search-engine/pkg/model"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -32,4 +33,5 @@ type IDexBtcListingRepository interface {
 	ProjectGetListingVolume(projectID string) (uint64, error)
 	ProjectGetCEXVolume(projectID string) (uint64, error)
 	RetrieveFloorPriceOfCollection(collectionID string) (uint64, error)
+	AggregateBTCVolumn(projectID string) ([]model.AggregateProjectItemResp, error)
 }
