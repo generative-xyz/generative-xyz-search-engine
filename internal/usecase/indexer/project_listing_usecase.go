@@ -88,7 +88,6 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 	}
 
 	data := []*entity.ProjectListing{}
-
 	for _, btc := range projectListingMapData {
 		projectID := btc.Project.TokenId
 		logger.AtLog.Infof("processing: %s", projectID)

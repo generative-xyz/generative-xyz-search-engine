@@ -288,7 +288,7 @@ func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.A
 
 	for _, item := range results {
 		res := &model.AggregateProjectItem{}
-		err = utils.Copy(item, res)
+		err = utils.Transform(item, res)
 		if err != nil {
 			return nil, err
 		}
@@ -303,6 +303,7 @@ func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.A
 			Minted:    res.Minted,
 		}
 		confs = append(confs, tmp)
+
 	}
 
 	return confs, nil

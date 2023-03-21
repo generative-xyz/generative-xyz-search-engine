@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -61,6 +62,20 @@ type flags struct {
 type tagNameMapping struct {
 	FieldNameToTag map[string]string
 	TagToFieldName map[string]string
+}
+
+func Transform(from interface{}, to interface{}) error {
+	bytes, err := bson.Marshal(from)
+	if err != nil {
+		return err
+	}
+
+	err = bson.Unmarshal(bytes, to)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Copy copy things
