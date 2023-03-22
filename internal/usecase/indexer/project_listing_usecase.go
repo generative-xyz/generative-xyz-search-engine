@@ -7,6 +7,7 @@ import (
 	"generative-xyz-search-engine/pkg/entity"
 	"generative-xyz-search-engine/pkg/logger"
 	"generative-xyz-search-engine/utils"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -68,6 +69,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 								IndexReverse: project.IndexReverse,
 							},
 						},
+						MintPrice: project.MintPrice,
 					}
 
 					if owner, ok := userMapData[project.CreatorAddrr]; ok {
@@ -120,9 +122,19 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 
 			}
 		}
+
 		btc.NumberOwners = int64(len(utils.RemoveDuplicateValues(addresses)))
 
-		floorPrice, _ := uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection(projectID)
+		floorPrice := uint64(0)
+		if btc.Project.MintingInfo.Index < btc.Project.MaxSupply {
+			num, err := strconv.ParseUint(btc.MintPrice, 10, 64)
+			if err == nil {
+				floorPrice = num
+			}
+		} else {
+			floorPrice, _ = uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection(projectID)
+		}
+
 		project := projectMapData[projectID]
 		hidden := false
 		if project != nil && project.IsHidden {

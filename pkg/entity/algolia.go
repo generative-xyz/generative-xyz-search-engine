@@ -24,6 +24,7 @@ type ProjectListing struct {
 	TotalVolume            uint64                  `json:"totalVolume"`
 	IsBuyable              bool                    `json:"isBuyable"`
 	Priority               int                     `json:"priority"`
+	MintPrice              string                  `json:"mintPrice"`
 }
 
 type ProjectMarketplaceData struct {
