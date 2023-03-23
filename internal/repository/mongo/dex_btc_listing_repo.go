@@ -254,7 +254,7 @@ func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint
 	return 0, nil
 }
 
-func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.AggregateProjectItemResp, error) {
+func (r dexBtcListingRepository) AggregateBTCVolumn() ([]model.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []model.AggregateProjectItemResp{}
 
@@ -263,7 +263,7 @@ func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.A
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"isMinted": true},
-		bson.M{"projectID": projectID},
+		// bson.M{"projectID": projectID},
 	}}}
 
 	pipeLine := bson.A{
@@ -303,7 +303,6 @@ func (r dexBtcListingRepository) AggregateBTCVolumn(projectID string) ([]model.A
 			Minted:    res.Minted,
 		}
 		confs = append(confs, tmp)
-
 	}
 
 	return confs, nil

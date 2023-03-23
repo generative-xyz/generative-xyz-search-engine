@@ -6,125 +6,151 @@ import (
 	"generative-xyz-search-engine/pkg/driver/algolia"
 	"generative-xyz-search-engine/pkg/entity"
 	"generative-xyz-search-engine/pkg/logger"
+	"generative-xyz-search-engine/pkg/model"
 	"generative-xyz-search-engine/utils"
 	"strconv"
-	"strings"
+	"sync"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta bool) error {
 	logger.AtLog.Infof("START indexProjectListingData algolia data %v", time.Now())
-	filterToken := algolia.AlgoliaFilter{
-		Page: 0, Limit: 1000,
-	}
 
-	projectMapData, err := uc.fetchAllProjectData(ctx)
-	if err != nil {
-		logger.AtLog.Error(err)
-		return err
-	}
+	wG := &sync.WaitGroup{}
+	projectMapData := map[string]*entity.ProjectAlgolia{}
+	var err error
 
-	userMapData, err := uc.fetchAllUserData(ctx)
-	if err != nil {
-		logger.AtLog.Error(err)
-		return err
-	}
-	projectListingMapData := make(map[string]*entity.ProjectListing)
-	for {
-		logger.AtLog.Info(filterToken)
-		var tokens []*entity.TokenUriAlgolia
-		resp, err := uc.algoliaClient.Search("token-uris", &filterToken)
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		projectMapData, err = uc.fetchAllProjectData(ctx)
 		if err != nil {
 			logger.AtLog.Error(err)
-			return err
 		}
-		resp.UnmarshalHits(&tokens)
+	}()
 
-		if len(tokens) == 0 {
-			break
+	userMapData := map[string]*entity.UserAlgolia{}
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		userMapData, err = uc.fetchAllUserData(ctx)
+		if err != nil {
+			logger.AtLog.Error(err)
 		}
+	}()
 
-		for _, token := range tokens {
-			if project, ok := projectMapData[token.ProjectID]; ok {
-				skip := false
-				for _, c := range project.Categories {
-					if c == "63f8325a1460b1502544101b" {
-						skip = true
-						break
-					}
-				}
+	wG.Add(1)
+	btcVolumesMap := map[string]model.AggregateProjectItemResp{}
+	go func() {
+		defer wG.Done()
+		btcVolumes, _ := uc.dexBtcListingRepo.AggregateBTCVolumn()
+		for _, i := range btcVolumes {
+			btcVolumesMap[i.ProjectID] = i
+		}
+	}()
 
-				if _, ok := projectListingMapData[token.ProjectID]; !ok && !skip {
-					listing := &entity.ProjectListing{
-						ObjectID: project.TokenID,
-						Project: &entity.ProjectInfo{
-							Name:            project.Name,
-							TokenId:         project.TokenID,
-							Thumbnail:       project.Image,
-							ContractAddress: project.ContractAddress,
-							CreatorAddress:  project.CreatorAddrr,
-							MaxSupply:       project.MaxSupply,
-							MintingInfo: &entity.ProjectMintingInfo{
-								Index:        project.Index,
-								IndexReverse: project.IndexReverse,
-							},
-						},
-						MintPrice: project.MintPrice,
-					}
+	wG.Wait()
 
-					if owner, ok := userMapData[project.CreatorAddrr]; ok {
-						listing.Owner = &entity.OwnerInfo{
-							WalletAddress:           owner.WalletAddress,
-							WalletAddressPayment:    owner.WalletAddressPayment,
-							WalletAddressBTC:        owner.WalletAddressBTC,
-							WalletAddressBTCTaproot: owner.WalletAddressBTCTaproot,
-							DisplayName:             owner.DisplayName,
-							Avatar:                  owner.Avatar,
-						}
-					}
-					projectListingMapData[token.ProjectID] = listing
-				}
+	projectListingMapData := make(map[string]*entity.ProjectListing)
+	for _, project := range projectMapData {
+		skip := false
+		for _, c := range project.Categories {
+			if c == "63f8325a1460b1502544101b" {
+				skip = true
+				break
 			}
 		}
-		filterToken.Page += 1
+
+		if skip {
+			continue
+		}
+
+		if _, ok := projectListingMapData[project.TokenID]; !ok && !skip {
+			listing := &entity.ProjectListing{
+				ObjectID: project.TokenID,
+				Project: &entity.ProjectInfo{
+					Name:            project.Name,
+					TokenId:         project.TokenID,
+					Thumbnail:       project.Image,
+					ContractAddress: project.ContractAddress,
+					CreatorAddress:  project.CreatorAddrr,
+					MaxSupply:       project.MaxSupply,
+					MintingInfo: &entity.ProjectMintingInfo{
+						Index:        project.Index,
+						IndexReverse: project.IndexReverse,
+					},
+				},
+				IsHidden:  project.IsHidden,
+				MintPrice: project.MintPrice,
+			}
+
+			if owner, ok := userMapData[project.CreatorAddrr]; ok {
+				listing.Owner = &entity.OwnerInfo{
+					WalletAddress:           owner.WalletAddress,
+					WalletAddressPayment:    owner.WalletAddressPayment,
+					WalletAddressBTC:        owner.WalletAddressBTC,
+					WalletAddressBTCTaproot: owner.WalletAddressBTCTaproot,
+					DisplayName:             owner.DisplayName,
+					Avatar:                  owner.Avatar,
+				}
+			}
+			projectListingMapData[project.TokenID] = listing
+		}
 	}
 
 	data := []*entity.ProjectListing{}
+	client := resty.New()
+
 	for _, btc := range projectListingMapData {
+		if btc.Project.IsHidden {
+			continue
+		}
+
 		projectID := btc.Project.TokenId
 		logger.AtLog.Infof("processing: %s", projectID)
-		var oTokens []*entity.TokenUriAlgolia
-		resp, err := uc.algoliaClient.Search("token-uris", &algolia.AlgoliaFilter{
-			Limit: 10_000, FilterStrs: []string{fmt.Sprintf("projectID:%s", projectID)},
-		})
 
-		if err != nil {
-			logger.AtLog.Error(err)
-			return err
+		filter := &algolia.AlgoliaFilter{
+			Page: 0, Limit: 500, FilterStrs: []string{fmt.Sprintf("projectID:%s", projectID)},
 		}
 
-		resp.UnmarshalHits(&oTokens)
 		addresses := []string{}
-		filters := []string{}
-		for _, t := range oTokens {
-			filters = append(filters, fmt.Sprintf("inscription_id:%s", t.TokenID))
-		}
-
-		resp, err = uc.algoliaClient.Search("inscriptions", &algolia.AlgoliaFilter{
-			Limit: 10_000, FilterStrs: []string{strings.Join(filters, " OR ")},
-		})
-
-		if err == nil {
-			for _, r := range resp.Hits {
-				if r["address"] != nil {
-					addresses = append(addresses, r["address"].(string))
-				}
-
+		wG1 := &sync.WaitGroup{}
+		for {
+			var oTokens []*entity.TokenUriAlgolia
+			resp, err := uc.algoliaClient.Search("token-uris", filter)
+			if err != nil {
+				logger.AtLog.Error(err)
+				return err
 			}
+
+			resp.UnmarshalHits(&oTokens)
+			if len(oTokens) == 0 {
+				break
+			}
+
+			for _, t := range oTokens {
+				wG1.Add(1)
+				go func(t *entity.TokenUriAlgolia) {
+					defer wG1.Done()
+					r := &InscriptionDetail{}
+					_, err = client.R().SetResult(&r).
+						Get(fmt.Sprintf("%s/inscription/%s", viper.GetString("GENERATIVE_EXPLORER_API"), t.TokenID))
+					if err != nil {
+						logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
+						return
+					}
+					addresses = append(addresses, r.Address)
+				}(t)
+			}
+			wG1.Wait()
+			filter.Page += 1
 		}
 
 		btc.NumberOwners = int64(len(utils.RemoveDuplicateValues(addresses)))
-
 		floorPrice := uint64(0)
 		if btc.Project.MintingInfo.Index < btc.Project.MaxSupply {
 			num, err := strconv.ParseUint(btc.MintPrice, 10, 64)
@@ -154,10 +180,9 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			volumeCEX, _ := uc.dexBtcListingRepo.ProjectGetCEXVolume(projectID)
 			mintVolume, _ := uc.tokenUriRepo.ProjectGetMintVolume(projectID)
 
-			btcVolumes, _ := uc.dexBtcListingRepo.AggregateBTCVolumn(projectID)
 			firstSaleVolume := float64(0)
-			if len(btcVolumes) > 0 {
-				firstSaleVolume = btcVolumes[0].Amount
+			if firstVolume, ok := btcVolumesMap[projectID]; ok {
+				firstSaleVolume = firstVolume.Amount
 			}
 
 			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{

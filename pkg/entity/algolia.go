@@ -59,6 +59,7 @@ type ProjectInfo struct {
 	MaxSupply       int64               `json:"maxSupply"`
 	MintingInfo     *ProjectMintingInfo `json:"mintingInfo"`
 	IsMintedOut     bool                `json:"isMintedOut"`
+	IsHidden        bool                `json:"isHidden"`
 }
 
 type VolumneObject struct {
