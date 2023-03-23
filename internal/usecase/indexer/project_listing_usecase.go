@@ -19,6 +19,10 @@ import (
 
 func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta bool) error {
 	logger.AtLog.Infof("START indexProjectListingData algolia data %v", time.Now())
+	defer logger.AtLog.Infof("DONE indexProjectListingData algolia data %v", time.Now())
+	if time.Now().Minute() < 45 {
+		return nil
+	}
 
 	wG := &sync.WaitGroup{}
 	projectMapData := map[string]*entity.ProjectAlgolia{}
@@ -214,7 +218,6 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		uc.algoliaClient.BulkIndexer("project-listing", data)
 	}
 
-	logger.AtLog.Infof("DONE indexProjectListingData algolia data %v", time.Now())
 	return nil
 }
 
