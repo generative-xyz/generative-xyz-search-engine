@@ -112,6 +112,10 @@ func (uc *indexerUsecase) inscriptionIndexingData(ctx context.Context, isDelta b
 						logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
 					}
 
+					if resp.Sat == 0 || resp.Address == "" {
+						return
+					}
+
 					resp.ObjectID = id
 					data = append(data, resp)
 				}(r)
