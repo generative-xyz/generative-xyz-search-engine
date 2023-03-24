@@ -205,7 +205,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			hidden = true
 		}
 
-		logger.AtLog.Infof("processing: %s - isHidden %v", projectID, hidden)
+		// logger.AtLog.Infof("processing: %s - isHidden %v", projectID, hidden)
 		if hidden {
 			btc.IsHidden = true
 		} else {
