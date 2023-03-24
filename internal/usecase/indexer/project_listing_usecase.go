@@ -75,15 +75,15 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		}
 	}()
 
-	wG.Add(1)
-	mapMintVolume := map[string]*model.TokenUriListingVolume{}
-	go func() {
-		defer wG.Done()
-		mintVolumes, _ := uc.tokenUriRepo.ProjectGetMintVolume()
-		for _, i := range mintVolumes {
-			mapMintVolume[i.ProjectId] = i
-		}
-	}()
+	// wG.Add(1)
+	// mapMintVolume := map[string]*model.TokenUriListingVolume{}
+	// go func() {
+	// 	defer wG.Done()
+	// 	mintVolumes, _ := uc.tokenUriRepo.ProjectGetMintVolume()
+	// 	for _, i := range mintVolumes {
+	// 		mapMintVolume[i.ProjectId] = i
+	// 	}
+	// }()
 
 	wG.Add(1)
 	mapVolumeCEX := map[string]*model.TokenUriListingVolume{}
@@ -266,10 +266,10 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 				currentListing = v.Count
 			}
 
-			mintVolume := uint64(0)
-			if v, ok := mapMintVolume[projectID]; ok {
-				mintVolume = v.TotalAmount
-			}
+			// mintVolume := uint64(0)
+			// if v, ok := mapMintVolume[projectID]; ok {
+			// 	mintVolume = v.TotalAmount
+			// }
 
 			volumeCEX := uint64(0)
 			if v, ok := mapVolumeCEX[projectID]; ok {
@@ -294,12 +294,12 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 				firstSaleVolume += v.Amount
 			}
 
-			totalVolume := volume + mintVolume + volumeCEX + uint64(firstSaleVolume)
+			totalVolume := volume + volumeCEX + uint64(firstSaleVolume)
 			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
-				FloorPrice:      floorPrice,
-				Listed:          currentListing,
-				TotalVolume:     totalVolume,
-				MintVolume:      mintVolume,
+				FloorPrice:  floorPrice,
+				Listed:      currentListing,
+				TotalVolume: totalVolume,
+				// MintVolume:      mintVolume,
 				FirstSaleVolume: firstSaleVolume,
 			}
 
