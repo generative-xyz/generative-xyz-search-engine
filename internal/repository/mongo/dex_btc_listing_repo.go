@@ -198,9 +198,9 @@ func (r dexBtcListingRepository) ProjectGetListingVolume() ([]*model.TokenUriLis
 	return result, nil
 }
 
-func (r dexBtcListingRepository) AggregateBTCVolumn() ([]model.AggregateProjectItemResp, error) {
+func (r dexBtcListingRepository) AggregateBTCVolumn() ([]*model.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
-	confs := []model.AggregateProjectItemResp{}
+	confs := []*model.AggregateProjectItemResp{}
 
 	calculate := bson.M{"$sum": "$project_mint_price"}
 	// PayType *string
@@ -237,11 +237,129 @@ func (r dexBtcListingRepository) AggregateBTCVolumn() ([]model.AggregateProjectI
 			return nil, err
 		}
 
-		tmp := model.AggregateProjectItemResp{
+		tmp := &model.AggregateProjectItemResp{
 			ProjectID: res.ID.ProjectID,
 			Paytype:   res.ID.Paytype,
 			BtcRate:   res.ID.BtcRate,
 			EthRate:   res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
+			Amount:    res.Amount,
+			Minted:    res.Minted,
+		}
+		confs = append(confs, tmp)
+	}
+
+	return confs, nil
+}
+
+func (r dexBtcListingRepository) AggregationETHWalletAddress() ([]*model.AggregateProjectItemResp, error) {
+	confs := []*model.AggregateProjectItemResp{}
+	pipeLine := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"isConfirm", true},
+					{"isMinted", true},
+					{"mintResponse.issent", true},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"projectID", "$projectID"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+					{"minted", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection("eth_wallet_address").Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {
+		res := &model.AggregateProjectItem{}
+		err = utils.Transform(item, res)
+		if err != nil {
+			return nil, err
+		}
+		tmp := &model.AggregateProjectItemResp{
+			ProjectID: res.ID.ProjectID,
+			Paytype:   "eth",
+			BtcRate:   14.7,
+			EthRate:   1,
+			MintPrice: res.ID.MintPrice / 1e10,
+			Amount:    res.Amount / 1e10,
+			Minted:    res.Minted,
+		}
+		confs = append(confs, tmp)
+	}
+
+	return confs, nil
+}
+
+func (r dexBtcListingRepository) AggregationBTCWalletAddress() ([]*model.AggregateProjectItemResp, error) {
+	confs := []*model.AggregateProjectItemResp{}
+	pipeLine := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"isConfirm", true},
+					{"isMinted", true},
+					{"mintResponse.issent", true},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"projectID", "$projectID"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+					{"minted", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection("btc_wallet_address").Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {
+		res := &model.AggregateProjectItem{}
+		err = utils.Transform(item, res)
+		if err != nil {
+			return nil, err
+		}
+		tmp := &model.AggregateProjectItemResp{
+			ProjectID: res.ID.ProjectID,
+			Paytype:   "btc",
+			BtcRate:   14.7,
+			EthRate:   1,
 			MintPrice: res.ID.MintPrice,
 			Amount:    res.Amount,
 			Minted:    res.Minted,

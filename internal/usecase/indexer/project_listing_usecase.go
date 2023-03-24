@@ -8,6 +8,7 @@ import (
 	"generative-xyz-search-engine/pkg/logger"
 	"generative-xyz-search-engine/pkg/model"
 	"generative-xyz-search-engine/utils"
+	"generative-xyz-search-engine/utils/constants"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,7 +46,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 	}()
 
 	wG.Add(1)
-	btcVolumesMap := map[string]model.AggregateProjectItemResp{}
+	btcVolumesMap := map[string]*model.AggregateProjectItemResp{}
 	go func() {
 		defer wG.Done()
 		btcVolumes, _ := uc.dexBtcListingRepo.AggregateBTCVolumn()
@@ -104,13 +105,33 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		}
 	}()
 
+	wG.Add(1)
+	mapOldETHVolume := map[string]*model.AggregateProjectItemResp{}
+	go func() {
+		defer wG.Done()
+		ethVolumes, _ := uc.dexBtcListingRepo.AggregationETHWalletAddress()
+		for _, i := range ethVolumes {
+			mapOldETHVolume[i.ProjectID] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapOldBTCVolume := map[string]*model.AggregateProjectItemResp{}
+	go func() {
+		defer wG.Done()
+		btcVolumes, _ := uc.dexBtcListingRepo.AggregationBTCWalletAddress()
+		for _, i := range btcVolumes {
+			mapOldBTCVolume[i.ProjectID] = i
+		}
+	}()
+
 	wG.Wait()
 
 	projectListingMapData := make(map[string]*entity.ProjectListing)
 	for _, project := range projectMapData {
 		skip := false
 		for _, c := range project.Categories {
-			if c == "63f8325a1460b1502544101b" {
+			if c == constants.CategoryUnverifiedIdStr {
 				skip = true
 				break
 			}
@@ -262,7 +283,15 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 
 			firstSaleVolume := float64(0)
 			if firstVolume, ok := btcVolumesMap[projectID]; ok {
-				firstSaleVolume = firstVolume.Amount
+				firstSaleVolume += firstVolume.Amount
+			}
+
+			if v, ok := mapOldETHVolume[projectID]; ok {
+				firstSaleVolume += v.Amount / float64(v.BtcRate/v.EthRate)
+			}
+
+			if v, ok := mapOldBTCVolume[projectID]; ok {
+				firstSaleVolume += v.Amount
 			}
 
 			totalVolume := volume + mintVolume + volumeCEX + uint64(firstSaleVolume)

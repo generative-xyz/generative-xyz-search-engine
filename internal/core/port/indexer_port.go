@@ -33,5 +33,7 @@ type IDexBtcListingRepository interface {
 	ProjectGetListingVolume() ([]*model.TokenUriListingVolume, error)
 	ProjectGetCEXVolume() ([]*model.TokenUriListingVolume, error)
 	RetrieveFloorPriceOfCollection() ([]*model.MarketplaceBTCListingFloorPrice, error)
-	AggregateBTCVolumn() ([]model.AggregateProjectItemResp, error)
+	AggregateBTCVolumn() ([]*model.AggregateProjectItemResp, error)
+	AggregationETHWalletAddress() ([]*model.AggregateProjectItemResp, error)
+	AggregationBTCWalletAddress() ([]*model.AggregateProjectItemResp, error)
 }

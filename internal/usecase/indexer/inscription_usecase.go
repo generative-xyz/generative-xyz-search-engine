@@ -49,23 +49,27 @@ func (uc *indexerUsecase) fixInscriptionData(ctx context.Context) error {
 	}
 	resp.UnmarshalHits(&inscriptions)
 
-	data := []*InscriptionDetail{}
+	// data := []*InscriptionDetail{}
 
-	client := resty.New()
+	// client := resty.New()
 	for _, i := range inscriptions {
-		resp := &InscriptionDetail{}
-		_, err := client.R().
-			EnableTrace().
-			SetResult(&resp).
-			Get(fmt.Sprintf("%s/inscription/%s", viper.GetString("GENERATIVE_EXPLORER_API"), i.InscriptionId))
-		if err != nil {
-			logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
-		}
+		uc.algoliaClient.DeleteObject("inscriptions", i.ObjectID)
+		// resp := &InscriptionDetail{}
+		// _, err := client.R().
+		// 	EnableTrace().
+		// 	SetResult(&resp).
+		// 	Get(fmt.Sprintf("%s/inscription/%s", viper.GetString("GENERATIVE_EXPLORER_API"), i.InscriptionId))
+		// if err != nil {
+		// 	logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
+		// }
+		// if i.InscriptionId == "" {
+		// 	continue
+		// }
 
-		resp.ObjectID = i.InscriptionId
-		data = append(data, resp)
+		// resp.ObjectID = i.InscriptionId
+		// data = append(data, resp)
 	}
-	uc.algoliaClient.BulkIndexer("inscriptions", data)
+	// uc.algoliaClient.BulkIndexer("inscriptions", data)
 	return nil
 }
 
