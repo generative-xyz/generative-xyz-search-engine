@@ -21,12 +21,13 @@ type DexBtcListing struct {
 }
 
 type TokenUriListingVolume struct {
-	TotalAmount uint64 `bson:"totalAmount" json:"totalAmount"`
+	ProjectId   string `bson:"_id"`
+	TotalAmount uint64 `bson:"total_amount"`
 }
 
 type MarketplaceBTCListingFloorPrice struct {
-	ID    string `bson:"_id"`
-	Price uint64 `bson:"amount"`
+	ProjectId  string `bson:"_id"`
+	FloorPrice uint64 `bson:"min_amount"`
 }
 
 type AggregateProjectItemResp struct {

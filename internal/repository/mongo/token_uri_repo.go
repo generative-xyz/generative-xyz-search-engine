@@ -26,22 +26,21 @@ func NewTokenRepository(db *mongo.Database) port.ITokenUriRepository {
 	}
 }
 
-func (r tokenRepository) ProjectGetMintVolume(projectID string) (uint64, error) {
-	result := []model.TokenUriListingVolume{}
+func (r tokenRepository) ProjectGetMintVolume() ([]*model.TokenUriListingVolume, error) {
+	result := []*model.TokenUriListingVolume{}
 	pipeline := bson.A{
 		bson.D{
 			{"$match",
 				bson.D{
 					{"isMinted", true},
-					{"projectID", projectID},
 				},
 			},
 		},
 		bson.D{
 			{"$group",
 				bson.D{
-					{"_id", ""},
-					{"Amount", bson.D{{"$sum", "$project_mint_price"}}},
+					{"_id", "$projectID"},
+					{"total_amount", bson.D{{"$sum", "$project_mint_price"}}},
 				},
 			},
 		},
@@ -49,22 +48,18 @@ func (r tokenRepository) ProjectGetMintVolume(projectID string) (uint64, error) 
 
 	cursor, err := r.DB.Collection("mint_nft_btc").Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if err = cursor.All((context.TODO()), &result); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if len(result) > 0 {
-		return uint64(result[0].TotalAmount), nil
+		return nil, errors.WithStack(err)
 	}
 
-	return 0, nil
+	return result, nil
 }
 
-func (r tokenRepository) ProjectGetCurrentListingNumber(projectID string) (uint64, error) {
-	result := []model.TokenUriListingPage{}
+func (r tokenRepository) ProjectGetCurrentListingNumber() ([]*model.TokenUriListingPage, error) {
+	result := []*model.TokenUriListingPage{}
 	pipeline := bson.A{
-		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
 		bson.D{
 			{"$lookup",
 				bson.D{
@@ -102,13 +97,10 @@ func (r tokenRepository) ProjectGetCurrentListingNumber(projectID string) (uint6
 			},
 		},
 		bson.D{
-			{"$facet",
+			{"$group",
 				bson.D{
-					{"totalCount",
-						bson.A{
-							bson.D{{"$count", "count"}},
-						},
-					},
+					{"_id", "$project_id"},
+					{"count", bson.D{{"$sum", 1}}},
 				},
 			},
 		},
@@ -116,17 +108,11 @@ func (r tokenRepository) ProjectGetCurrentListingNumber(projectID string) (uint6
 
 	cursor, err := r.DB.Collection("token_uri").Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if err = cursor.All((context.TODO()), &result); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if len(result) > 0 {
-		if len(result[0].TotalCount) > 0 {
-			return uint64(result[0].TotalCount[0].Count), nil
-		}
-		return 0, nil
+		return nil, errors.WithStack(err)
 	}
 
-	return 0, nil
+	return result, nil
 }

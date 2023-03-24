@@ -20,8 +20,8 @@ type IProjectRepository interface {
 
 type ITokenUriRepository interface {
 	mongodb.Repository
-	ProjectGetCurrentListingNumber(projectID string) (uint64, error)
-	ProjectGetMintVolume(projectID string) (uint64, error)
+	ProjectGetCurrentListingNumber() ([]*model.TokenUriListingPage, error)
+	ProjectGetMintVolume() ([]*model.TokenUriListingVolume, error)
 }
 
 type IUserRepository interface {
@@ -30,8 +30,8 @@ type IUserRepository interface {
 
 type IDexBtcListingRepository interface {
 	mongodb.Repository
-	ProjectGetListingVolume(projectID string) (uint64, error)
-	ProjectGetCEXVolume(projectID string) (uint64, error)
-	RetrieveFloorPriceOfCollection(collectionID string) (uint64, error)
+	ProjectGetListingVolume() ([]*model.TokenUriListingVolume, error)
+	ProjectGetCEXVolume() ([]*model.TokenUriListingVolume, error)
+	RetrieveFloorPriceOfCollection() ([]*model.MarketplaceBTCListingFloorPrice, error)
 	AggregateBTCVolumn() ([]model.AggregateProjectItemResp, error)
 }

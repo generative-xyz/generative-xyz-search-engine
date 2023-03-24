@@ -35,10 +35,8 @@ type TokenUri struct {
 }
 
 type TokenUriListingPage struct {
-	TotalData  []TokenUriListingFilter `bson:"totalData" json:"totalData"`
-	TotalCount []struct {
-		Count int64 `bson:"count" json:"count"`
-	} `bson:"totalCount" json:"totalCount"`
+	ProjectId string `bson:"_id"`
+	Count     uint64 `bson:"count"`
 }
 
 type TokenUriListingFilter struct {

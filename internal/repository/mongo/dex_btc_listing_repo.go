@@ -27,8 +27,8 @@ func NewDexBtcListingRepository(db *mongo.Database) port.IDexBtcListingRepositor
 	}
 }
 
-func (r dexBtcListingRepository) RetrieveFloorPriceOfCollection(collectionID string) (uint64, error) {
-	resp := []model.MarketplaceBTCListingFloorPrice{}
+func (r dexBtcListingRepository) RetrieveFloorPriceOfCollection() ([]*model.MarketplaceBTCListingFloorPrice, error) {
+	resp := []*model.MarketplaceBTCListingFloorPrice{}
 	cursor, err := r.DB.Collection("dex_btc_listing").Aggregate(context.TODO(), bson.A{
 		bson.D{
 			{"$project",
@@ -61,55 +61,33 @@ func (r dexBtcListingRepository) RetrieveFloorPriceOfCollection(collectionID str
 							bson.D{{"$project", bson.D{{"project_id", 1}}}},
 						},
 					},
-					{"as", "collection_id"},
+					{"as", "collections"},
 				},
 			},
 		},
-		bson.D{{"$unwind", "$collection_id"}},
+		bson.D{{"$unwind", "$collections"}},
 		bson.D{
-			{"$match",
+			{"$group",
 				bson.D{
-					{"$expr",
-						bson.D{
-							{"$eq",
-								bson.A{
-									bson.D{
-										{"$getField",
-											bson.D{
-												{"field", bson.D{{"$literal", "project_id"}}},
-												{"input", "$collection_id"},
-											},
-										},
-									},
-									collectionID,
-								},
-							},
-						},
-					},
+					{"_id", "$collections.project_id"},
+					{"min_amount", bson.D{{"$min", "$amount"}}},
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{"amount", 1}}}},
-		bson.D{{"$limit", 1}},
 	})
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	if err = cursor.All(context.TODO(), &resp); err != nil {
-		return 0, err
+	if err := cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
 	}
-
-	if len(resp) == 0 {
-		return 0, nil
-	}
-
-	return resp[0].Price, nil
+	return resp, nil
 }
 
-func (r dexBtcListingRepository) ProjectGetCEXVolume(projectID string) (uint64, error) {
-	result := []model.TokenUriListingVolume{}
+func (r dexBtcListingRepository) ProjectGetCEXVolume() ([]*model.TokenUriListingVolume, error) {
+	result := []*model.TokenUriListingVolume{}
 	pipeline := bson.A{
 		bson.D{{"$match", bson.D{{"isSold", true}}}},
 		bson.D{{"$addFields", bson.D{{"price", bson.D{{"$toDouble", "$amount"}}}}}},
@@ -119,20 +97,14 @@ func (r dexBtcListingRepository) ProjectGetCEXVolume(projectID string) (uint64, 
 					{"from", "token_uri"},
 					{"localField", "inscriptionID"},
 					{"foreignField", "token_id"},
-					{"let", bson.D{{"id", "$_id"}}},
-					{"pipeline",
-						bson.A{
-							bson.D{{"$match", bson.D{{"project_id", projectID}}}},
-						},
-					},
-					{"as", "collection_id"},
+					{"as", "collections"},
 				},
 			},
 		},
 		bson.D{
 			{"$unwind",
 				bson.D{
-					{"path", "$collection_id"},
+					{"path", "$collections"},
 					{"preserveNullAndEmptyArrays", false},
 				},
 			},
@@ -140,16 +112,8 @@ func (r dexBtcListingRepository) ProjectGetCEXVolume(projectID string) (uint64, 
 		bson.D{
 			{"$group",
 				bson.D{
-					{"_id", ""},
-					{"Amount", bson.D{{"$sum", "$price"}}},
-				},
-			},
-		},
-		bson.D{
-			{"$project",
-				bson.D{
-					{"_id", 0},
-					{"totalAmount", "$Amount"},
+					{"_id", "$collections.project_id"},
+					{"total_amount", bson.D{{"$sum", "$price"}}},
 				},
 			},
 		},
@@ -157,20 +121,17 @@ func (r dexBtcListingRepository) ProjectGetCEXVolume(projectID string) (uint64, 
 
 	cursor, err := r.DB.Collection("marketplace_btc_listing").Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if err = cursor.All((context.TODO()), &result); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if len(result) > 0 {
-		return uint64(result[0].TotalAmount), nil
+		return nil, errors.WithStack(err)
 	}
 
-	return 0, nil
+	return result, nil
 }
 
-func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint64, error) {
-	result := []model.TokenUriListingVolume{}
+func (r dexBtcListingRepository) ProjectGetListingVolume() ([]*model.TokenUriListingVolume, error) {
+	result := []*model.TokenUriListingVolume{}
 	pipeline := bson.A{
 		bson.D{
 			{"$match",
@@ -204,20 +165,14 @@ func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint
 					{"from", "token_uri"},
 					{"localField", "inscription_id"},
 					{"foreignField", "token_id"},
-					{"let", bson.D{{"id", "$_id"}}},
-					{"pipeline",
-						bson.A{
-							bson.D{{"$match", bson.D{{"project_id", projectID}}}},
-						},
-					},
-					{"as", "collection_id"},
+					{"as", "collections"},
 				},
 			},
 		},
 		bson.D{
 			{"$unwind",
 				bson.D{
-					{"path", "$collection_id"},
+					{"path", "$collections"},
 					{"preserveNullAndEmptyArrays", false},
 				},
 			},
@@ -225,16 +180,8 @@ func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint
 		bson.D{
 			{"$group",
 				bson.D{
-					{"_id", ""},
-					{"Amount", bson.D{{"$sum", "$amount"}}},
-				},
-			},
-		},
-		bson.D{
-			{"$project",
-				bson.D{
-					{"_id", 0},
-					{"totalAmount", "$Amount"},
+					{"_id", "$collections.project_id"},
+					{"total_amount", bson.D{{"$sum", "$amount"}}},
 				},
 			},
 		},
@@ -242,16 +189,13 @@ func (r dexBtcListingRepository) ProjectGetListingVolume(projectID string) (uint
 
 	cursor, err := r.DB.Collection("dex_btc_listing").Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	if err = cursor.All((context.TODO()), &result); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if len(result) > 0 {
-		return uint64(result[0].TotalAmount), nil
+		return nil, errors.WithStack(err)
 	}
 
-	return 0, nil
+	return result, nil
 }
 
 func (r dexBtcListingRepository) AggregateBTCVolumn() ([]model.AggregateProjectItemResp, error) {

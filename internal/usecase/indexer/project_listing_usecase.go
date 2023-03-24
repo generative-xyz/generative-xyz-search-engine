@@ -9,18 +9,14 @@ import (
 	"generative-xyz-search-engine/pkg/model"
 	"generative-xyz-search-engine/utils"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/go-resty/resty/v2"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta bool) error {
 	logger.AtLog.Infof("START indexProjectListingData algolia data %v", time.Now())
 	defer logger.AtLog.Infof("DONE indexProjectListingData algolia data %v", time.Now())
-	return nil
 	if time.Now().Minute() < 45 {
 		return nil
 	}
@@ -55,6 +51,56 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		btcVolumes, _ := uc.dexBtcListingRepo.AggregateBTCVolumn()
 		for _, i := range btcVolumes {
 			btcVolumesMap[i.ProjectID] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapFloorPrice := map[string]*model.MarketplaceBTCListingFloorPrice{}
+	go func() {
+		defer wG.Done()
+		floorPrices, _ := uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection()
+		for _, i := range floorPrices {
+			mapFloorPrice[i.ProjectId] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapCurrentListing := map[string]*model.TokenUriListingPage{}
+	go func() {
+		defer wG.Done()
+		currentListings, _ := uc.tokenUriRepo.ProjectGetCurrentListingNumber()
+		for _, i := range currentListings {
+			mapCurrentListing[i.ProjectId] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapMintVolume := map[string]*model.TokenUriListingVolume{}
+	go func() {
+		defer wG.Done()
+		mintVolumes, _ := uc.tokenUriRepo.ProjectGetMintVolume()
+		for _, i := range mintVolumes {
+			mapMintVolume[i.ProjectId] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapVolumeCEX := map[string]*model.TokenUriListingVolume{}
+	go func() {
+		defer wG.Done()
+		volumeCEXs, _ := uc.dexBtcListingRepo.ProjectGetCEXVolume()
+		for _, i := range volumeCEXs {
+			mapVolumeCEX[i.ProjectId] = i
+		}
+	}()
+
+	wG.Add(1)
+	mapVolume := map[string]*model.TokenUriListingVolume{}
+	go func() {
+		defer wG.Done()
+		volumes, _ := uc.dexBtcListingRepo.ProjectGetListingVolume()
+		for _, i := range volumes {
+			mapVolume[i.ProjectId] = i
 		}
 	}()
 
@@ -108,62 +154,24 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 	}
 
 	data := []*entity.ProjectListing{}
-	client := resty.New()
+	// client := resty.New()
+	// apiUrl := viper.GetString("GENERATIVE_EXPLORER_API")
 
 	for _, btc := range projectListingMapData {
-		if btc.Project.IsHidden {
-			continue
-		}
-
 		projectID := btc.Project.TokenId
-		logger.AtLog.Infof("processing: %s", projectID)
+		// if projectID != "1000001" {
+		// 	continue
+		// }
 
-		filter := &algolia.AlgoliaFilter{
-			Page: 0, Limit: 500, FilterStrs: []string{fmt.Sprintf("projectID:%s", projectID)},
-		}
-
-		addresses := []string{}
-		wG1 := &sync.WaitGroup{}
-		for {
-			var oTokens []*entity.TokenUriAlgolia
-			resp, err := uc.algoliaClient.Search("token-uris", filter)
-			if err != nil {
-				logger.AtLog.Error(err)
-				return err
-			}
-
-			resp.UnmarshalHits(&oTokens)
-			if len(oTokens) == 0 {
-				break
-			}
-
-			for _, t := range oTokens {
-				wG1.Add(1)
-				go func(t *entity.TokenUriAlgolia) {
-					defer wG1.Done()
-					r := &InscriptionDetail{}
-					_, err = client.R().SetResult(&r).
-						Get(fmt.Sprintf("%s/inscription/%s", viper.GetString("GENERATIVE_EXPLORER_API"), t.TokenID))
-					if err != nil {
-						logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
-						return
-					}
-					addresses = append(addresses, r.Address)
-				}(t)
-			}
-			wG1.Wait()
-			filter.Page += 1
-		}
-
-		btc.NumberOwners = int64(len(utils.RemoveDuplicateValues(addresses)))
 		floorPrice := uint64(0)
 		if btc.Project.MintingInfo.Index < btc.Project.MaxSupply {
-			num, err := strconv.ParseUint(btc.MintPrice, 10, 64)
-			if err == nil {
+			if num, err := strconv.ParseUint(btc.MintPrice, 10, 64); err == nil {
 				floorPrice = num
 			}
 		} else {
-			floorPrice, _ = uc.dexBtcListingRepo.RetrieveFloorPriceOfCollection(projectID)
+			if price, ok := mapFloorPrice[projectID]; ok {
+				floorPrice = price.FloorPrice
+			}
 		}
 
 		project := projectMapData[projectID]
@@ -176,29 +184,97 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			hidden = true
 		}
 
+		logger.AtLog.Infof("processing: %s - isHidden %v", projectID, hidden)
 		if hidden {
 			btc.IsHidden = true
 		} else {
-			currentListing, _ := uc.tokenUriRepo.ProjectGetCurrentListingNumber(projectID)
-			volume, _ := uc.dexBtcListingRepo.ProjectGetListingVolume(projectID)
+			filter := &algolia.AlgoliaFilter{
+				Page: 0, Limit: 500, FilterStrs: []string{fmt.Sprintf("projectID:%s", projectID)},
+			}
+			addresses := []string{}
+			for {
+				var oTokens []*entity.TokenUriAlgolia
+				resp, err := uc.algoliaClient.Search("token-uris", filter)
+				if err != nil {
+					logger.AtLog.Error(err)
+					return err
+				}
 
-			volumeCEX, _ := uc.dexBtcListingRepo.ProjectGetCEXVolume(projectID)
-			mintVolume, _ := uc.tokenUriRepo.ProjectGetMintVolume(projectID)
+				resp.UnmarshalHits(&oTokens)
+				if len(oTokens) == 0 {
+					break
+				}
+
+				filters := []string{}
+				for _, t := range oTokens {
+					filters = append(filters, fmt.Sprintf("inscription_id:%s", t.TokenID))
+				}
+				resp, err = uc.algoliaClient.Search("inscriptions", &algolia.AlgoliaFilter{
+					Limit: 10_000, FilterStrs: []string{strings.Join(filters, " OR ")},
+				})
+
+				if err == nil {
+					for _, r := range resp.Hits {
+						if r["address"] != nil {
+							addresses = append(addresses, r["address"].(string))
+						}
+					}
+					addresses = utils.RemoveDuplicateValues(addresses)
+				}
+
+				// wG1.Add(1)
+				// 	go func(t *entity.TokenUriAlgolia) {
+				// 		defer wG1.Done()
+				// 		r := &InscriptionDetail{}
+				// 		_, err = client.R().SetResult(&r).
+				// 			Get(fmt.Sprintf("%s/inscription/%s", apiUrl, t.TokenID))
+				// 		if err != nil {
+				// 			logger.AtLog.Logger.Error("Get list inscriptions error", zap.Error(err))
+				// 			return
+				// 		}
+				// 		addresses = append(addresses, r.Address)
+				// 	}(t)
+
+				// wG1.Wait()
+				filter.Page += 1
+			}
+			btc.NumberOwners = int64(len(utils.RemoveDuplicateValues(addresses)))
+
+			currentListing := uint64(0)
+			if v, ok := mapCurrentListing[projectID]; ok {
+				currentListing = v.Count
+			}
+
+			mintVolume := uint64(0)
+			if v, ok := mapMintVolume[projectID]; ok {
+				mintVolume = v.TotalAmount
+			}
+
+			volumeCEX := uint64(0)
+			if v, ok := mapVolumeCEX[projectID]; ok {
+				volumeCEX = v.TotalAmount
+			}
+
+			volume := uint64(0)
+			if v, ok := mapVolume[projectID]; ok {
+				volume = v.TotalAmount
+			}
 
 			firstSaleVolume := float64(0)
 			if firstVolume, ok := btcVolumesMap[projectID]; ok {
 				firstSaleVolume = firstVolume.Amount
 			}
 
+			totalVolume := volume + mintVolume + volumeCEX + uint64(firstSaleVolume)
 			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
 				FloorPrice:      floorPrice,
 				Listed:          currentListing,
-				TotalVolume:     volume + mintVolume + volumeCEX + uint64(firstSaleVolume),
+				TotalVolume:     totalVolume,
 				MintVolume:      mintVolume,
 				FirstSaleVolume: firstSaleVolume,
 			}
 
-			btc.TotalVolume = volume + mintVolume + volumeCEX + uint64(firstSaleVolume)
+			btc.TotalVolume = totalVolume
 			btc.Priority = 3
 			if btc.ProjectMarketplaceData.FloorPrice > 0 && btc.ProjectMarketplaceData.TotalVolume > 0 {
 				btc.IsBuyable = true
