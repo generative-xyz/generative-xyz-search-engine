@@ -36,7 +36,7 @@ type indexerUsecase struct {
 func (uc *indexerUsecase) Schedule() {
 	s := gocron.NewScheduler(time.Local)
 	s = s.Cron(viper.GetString("ALGOLIA_INDEX_FULL_SCAN_CRON"))
-	// s.StartImmediately()
+	//s.StartImmediately()
 	_, err := s.Do(func() {
 		uc.ProcessIndexDataAlgolia(context.Background(), false)
 	})
@@ -47,7 +47,7 @@ func (uc *indexerUsecase) Schedule() {
 	}
 
 	s = s.Cron(viper.GetString("ALGOLIA_INDEX_SCAN_CRON"))
-	// s.StartImmediately()
+	//s.StartImmediately()
 	_, err = s.Do(func() {
 		uc.ProcessIndexDataAlgolia(context.Background(), true)
 	})

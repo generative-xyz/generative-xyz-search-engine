@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+var specialProjectPrice = map[string]uint64{
+	"1002573": 263000000,
+}
+
 func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta bool) error {
 	logger.AtLog.Infof("START indexProjectListingData algolia data %v", time.Now())
 	defer logger.AtLog.Infof("DONE indexProjectListingData algolia data %v", time.Now())
@@ -293,8 +297,12 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			if v, ok := mapOldBTCVolume[projectID]; ok {
 				firstSaleVolume += v.Amount
 			}
-
 			totalVolume := volume + volumeCEX + uint64(firstSaleVolume)
+
+			// override total volume for special project
+			if price, has := specialProjectPrice[projectID]; has {
+				totalVolume = price
+			}
 			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
 				FloorPrice:  floorPrice,
 				Listed:      currentListing,
