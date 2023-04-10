@@ -189,7 +189,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 		// }
 
 		floorPrice := uint64(0)
-		if btc.Project.MintingInfo.Index < btc.Project.MaxSupply {
+		if btc.Project.MintingInfo.Index < btc.Project.MaxSupply && btc.Project.TokenId != "1002573" {
 			if num, err := strconv.ParseUint(btc.MintPrice, 10, 64); err == nil {
 				floorPrice = num
 			}
