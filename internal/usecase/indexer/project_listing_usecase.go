@@ -297,11 +297,11 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 			if v, ok := mapOldBTCVolume[projectID]; ok {
 				firstSaleVolume += v.Amount
 			}
-			totalVolume := volume + volumeCEX + uint64(firstSaleVolume)
 
+			totalVolume := volume + volumeCEX + uint64(firstSaleVolume)
 			// override total volume for special project
 			if price, has := specialProjectPrice[projectID]; has {
-				totalVolume = price
+				totalVolume += price
 			}
 			btc.ProjectMarketplaceData = &entity.ProjectMarketplaceData{
 				FloorPrice:  floorPrice,
@@ -329,6 +329,7 @@ func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta b
 	}
 
 	if len(data) > 0 {
+		logger.AtLog.Infof("update total %d project listing", len(data))
 		uc.algoliaClient.BulkIndexer("project-listing", data)
 	}
 
