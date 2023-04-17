@@ -22,9 +22,6 @@ var specialProjectPrice = map[string]uint64{
 func (uc *indexerUsecase) indexProjectListingData(ctx context.Context, isDelta bool) error {
 	logger.AtLog.Infof("START indexProjectListingData algolia data %v", time.Now())
 	defer logger.AtLog.Infof("DONE indexProjectListingData algolia data %v", time.Now())
-	if time.Now().Minute() < 45 {
-		return nil
-	}
 
 	wG := &sync.WaitGroup{}
 	projectMapData := map[string]*entity.ProjectAlgolia{}
